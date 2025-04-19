@@ -33,49 +33,46 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3 # 使用官方的 Gradle action
 
-      # 4. 设置 Android SDK 环境
+            # 4. 设置 Android SDK 环境 (修改版)
       - name: Set up Android SDK
-        # 这个步骤会下载命令行工具，然后用 sdkmanager 安装必要的包
-        # !!! 注意：这里的平台和 Build Tools 版本需要根据 Mindustry 的 android/build.gradle 确认 !!!
         env:
-          # 定义 SDK 安装路径 (在 GitHub Actions runner 内部)
           ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
           # !!! 下面的版本号是示例，请根据 Mindustry 的要求修改 !!!
           TARGET_PLATFORM: "android-34"       # 示例: 编译目标平台版本 (例如: "android-34")
           TARGET_BUILD_TOOLS: "34.0.0"      # 示例: 需要的 Build Tools 版本 (例如: "34.0.0")
-          # 命令行工具下载链接的版本号可能需要更新 (检查 https://developer.android.com/studio#command-tools)
           CMDLINE_TOOLS_VERSION: "11076708" # 示例版本号，可能需要更新
 
         run: |
           echo "Setting up Android SDK..."
           SDK_ROOT=$ANDROID_SDK_ROOT # 从环境变量获取路径
+          SDKMANAGER_BIN="$SDK_ROOT/cmdline-tools/latest/bin" # 定义 sdkmanager 的 bin 目录路径
+          SDKMANAGER_CMD="$SDKMANAGER_BIN/sdkmanager" # 定义 sdkmanager 的完整命令路径
+
           mkdir -p $SDK_ROOT/cmdline-tools
 
           echo "Downloading command-line tools..."
           wget https://dl.google.com/android/repository/commandlinetools-linux-${CMDLINE_TOOLS_VERSION}_latest.zip -O cmdline-tools.zip
           unzip -q cmdline-tools.zip -d $SDK_ROOT/cmdline-tools/temp
           # 创建标准的 'latest' 目录结构
-          mkdir -p $SDK_ROOT/cmdline-tools/latest
+          mkdir -p $SDKMANAGER_BIN # 确保 bin 目录存在
           mv $SDK_ROOT/cmdline-tools/temp/* $SDK_ROOT/cmdline-tools/latest/
           rm -rf $SDK_ROOT/cmdline-tools/temp cmdline-tools.zip
 
-          # 将 sdkmanager 添加到系统路径，方便后续直接调用
-          echo "$SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
           # 将 SDK 路径设置为后续步骤可用的环境变量
           echo "ANDROID_HOME=$SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> $GITHUB_ENV
 
           echo "Accepting licenses..."
-          # 自动接受所有 SDK 许可
-          yes | sdkmanager --licenses --sdk_root=$SDK_ROOT || echo "License acceptance command finished."
+          # 使用完整路径调用 sdkmanager，并自动接受许可
+          yes | $SDKMANAGER_CMD --licenses --sdk_root=$SDK_ROOT || echo "License acceptance attempt finished."
 
           echo "Installing SDK packages..."
-          # 安装 platform-tools, 指定的平台, 和指定的 build-tools
-          sdkmanager --sdk_root=$SDK_ROOT "platform-tools" "platforms;${TARGET_PLATFORM}" "build-tools;${TARGET_BUILD_TOOLS}"
+          # 使用完整路径调用 sdkmanager 来安装包
+          $SDKMANAGER_CMD --sdk_root=$SDK_ROOT "platform-tools" "platforms;${TARGET_PLATFORM}" "build-tools;${TARGET_BUILD_TOOLS}"
 
           echo "Android SDK setup complete."
           # (可选) 验证安装
-          sdkmanager --list_installed --sdk_root=$SDK_ROOT
+          $SDKMANAGER_CMD --list_installed --sdk_root=$SDK_ROOT
 
       # 5. 构建 Android Debug APK
       # Gradle 会自动使用 ANDROID_HOME (或 ANDROID_SDK_ROOT) 环境变量
