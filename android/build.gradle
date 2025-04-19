@@ -101,8 +101,8 @@ android{
             //WHY THE HELL ARE DEFAULT INTERFACES NOT BEING DESUGARED? WHY DID UPDATING AGP MAKE THIS HAPPEN?
             //When I ENABLE shrinking, r8 goes and REMOVES ALL DEFAULT INTERFACE CLASSES, which breaks mods. Why?
             //-keep class mindustry.** { *; } should *keep the classes* - WHY IS R8 REMOVING THEM?
-            minifyEnabled = true
-            shrinkResources = true
+            minifyEnabled = false
+            shrinkResources = false
             proguardFiles("proguard-rules.pro")
         }
     }
