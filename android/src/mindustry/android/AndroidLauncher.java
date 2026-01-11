@@ -54,6 +54,15 @@ public class AndroidLauncher extends AndroidApplication{
             Scl.setAddition(0.5f);
         }
 
+        // Initialize Vulkan
+        try {
+            if (VulkanBridge.initVulkan()) {
+                Log.info("Vulkan initialized successfully from Launcher.");
+            }
+        } catch (Throwable t) {
+            Log.err("Vulkan initialization failed", t);
+        }
+
         initialize(new ClientLauncher(){
 
             @Override
