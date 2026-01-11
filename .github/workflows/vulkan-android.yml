@@ -22,9 +22,13 @@ jobs:
     - name: Accept Android Licenses
       run: yes | sdkmanager --licenses || true
 
-    - name: Build Android APK
+    - name: Pack Assets
       run: |
         chmod +x gradlew
+        ./gradlew :tools:pack --no-daemon
+
+    - name: Build Android APK
+      run: |
         ./gradlew :android:assembleDebug --stacktrace --no-daemon
 
     - name: Upload APK
