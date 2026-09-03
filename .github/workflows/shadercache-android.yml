@@ -19,6 +19,14 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
+    # AGP 8.2.2's ConstraintHandler mutates constraints during resolution, which is a
+    # hard error on Gradle 9.x (upstream never builds :android in CI so it never hits this).
+    # Pin the wrapper invocation to Gradle 8.14.3 for the android build only.
+    - name: Install Gradle 8.14.3
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: "8.14.3"
+
     - name: Checkout local Arc (shader-binary-cache branch)
       uses: actions/checkout@v4
       with:
@@ -29,12 +37,12 @@ jobs:
     - name: Pack Assets
       run: |
         chmod +x gradlew
-        ./gradlew :tools:pack --no-daemon
+        gradle :tools:pack --no-daemon
 
     # localArc layout: build.gradle picks up ../Arc automatically
     - name: Build Android APK
       run: |
-        ./gradlew :android:assembleDebug --stacktrace --no-daemon
+        gradle :android:assembleDebug --stacktrace --no-daemon
 
     - name: Verify shader-cache classes landed in the APK
       run: |
