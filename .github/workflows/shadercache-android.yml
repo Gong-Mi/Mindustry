@@ -32,8 +32,14 @@ jobs:
       with:
         repository: Gong-Mi/Arc
         ref: shader-binary-cache
-        # localArc = file(rootDir.parent/'Arc') — must sit one level ABOVE the repo checkout
-        path: ../../Arc
+        path: arc-tmp
+
+    # build.gradle checks file(rootDir.parent/'Arc'); GITHUB_WORKSPACE is /home/runner/work/Mindustry/Mindustry
+    # so Arc must live at /home/runner/work/Mindustry/Arc — exactly one level above the repo root.
+    - name: Place Arc at workspace parent (localArc layout)
+      run: |
+        mv arc-tmp ../Arc
+        ls ../Arc | head -5
 
     - name: Pack Assets
       run: |
