@@ -32,7 +32,8 @@ jobs:
       with:
         repository: Gong-Mi/Arc
         ref: shader-binary-cache
-        path: Arc
+        # localArc = file(rootDir.parent/'Arc') — must sit one level ABOVE the repo checkout
+        path: ../../Arc
 
     - name: Pack Assets
       run: |
@@ -47,9 +48,11 @@ jobs:
     - name: Verify shader-cache classes landed in the APK
       run: |
         APK=android/build/outputs/apk/debug/android-debug.apk
+        ls -la $APK
         mkdir -p dexdump && cd dexdump
         unzip -o ../$APK "classes*.dex" >/dev/null
-        strings classes*.dex | grep -m2 "ShaderBinaryCache" || echo "WARNING: shader cache classes not found in dex"
+        for d in classes*.dex; do echo "== $d =="; strings "$d" | grep -c "shader_cache" || true; done
+        strings classes*.dex | grep -m3 "ShaderBinaryCache\|shader_cache" && echo "DEX-VERIFY: shader cache present" || { echo "DEX-VERIFY: NOT FOUND"; exit 1; }
 
     - name: Upload APK
       if: success()
