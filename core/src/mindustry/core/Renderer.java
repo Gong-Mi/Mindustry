@@ -39,6 +39,8 @@ public class Renderer implements ApplicationListener{
     public @Nullable Bloom bloom;
     public @Nullable FrameBuffer backgroundBuffer;
     public FrameBuffer effectBuffer = new FrameBuffer();
+    /** effect buffer render scale, set from settings (1=full res, lower=performance) */
+    private float effectBufferScale = 1f;
     public boolean animateShields, animateWater, drawWeather = true, drawStatus, enableEffects, drawDisplays = true, drawLight = true, pixelate = false, showPings = true, showOtherBuildPlans = true;
     public float weatherAlpha;
     /** minZoom = zooming out, maxZoom = zooming in, used by cutscenes */
@@ -94,6 +96,15 @@ public class Renderer implements ApplicationListener{
 
     public void addCustomBackground(String name, Runnable render){
         customBackgrounds.put(name, render);
+    }
+
+    /** Sets the render scale for effect buffers (shields, build beams). 1 = full resolution. */
+    public void setEffectBufferScale(float scale){
+        this.effectBufferScale = Mathf.clamp(scale, 0.25f, 1f);
+    }
+
+    public float getEffectBufferScale(){
+        return effectBufferScale;
     }
 
     @Override
@@ -315,7 +326,9 @@ public class Renderer implements ApplicationListener{
         Draw.reset();
 
         if(animateWater || animateShields){
-            effectBuffer.resize(graphics.getWidth(), graphics.getHeight());
+            int effectW = Math.max(2, (int)(graphics.getWidth() * effectBufferScale));
+            int effectH = Math.max(2, (int)(graphics.getHeight() * effectBufferScale));
+            effectBuffer.resize(effectW, effectH);
         }
 
         Draw.proj(camera);

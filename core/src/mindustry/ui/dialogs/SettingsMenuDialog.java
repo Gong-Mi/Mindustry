@@ -541,6 +541,23 @@ public class SettingsMenuDialog extends BaseDialog{
             }
         });
 
+        //shader binary cache: only meaningful on GLES 3 devices with the adapter installed
+        if(arc.graphics.gl.ShaderBinaryCache.adapter != null){
+            graphics.checkPref("shadercache", true, val -> {
+                arc.graphics.gl.ShaderBinaryCache.enabled = val;
+                Log.info("[GL] Shader cache " + (val ? "enabled" : "disabled"));
+            });
+            //sync initial state in case settings were changed externally
+            arc.graphics.gl.ShaderBinaryCache.enabled = Core.settings.getBool("shadercache", true);
+        }
+
+        //effect buffer quality: lower = better performance on weaker GPUs
+        graphics.sliderPref("effectbufferquality", 100, 25, 100, 25, s -> {
+            renderer.setEffectBufferScale(s / 100f);
+            return s + "%";
+        });
+        renderer.setEffectBufferScale(Core.settings.getInt("effectbufferquality", 100) / 100f);
+
         //iOS (and possibly Android) devices do not support linear filtering well, so disable it
         graphics.checkPref("linear", !mobile, b -> {
             for(Texture tex : Core.atlas.getTextures()){
