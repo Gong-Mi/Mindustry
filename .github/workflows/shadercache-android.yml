@@ -47,9 +47,32 @@ jobs:
         gradle :tools:pack --no-daemon
 
     # localArc layout: build.gradle picks up ../Arc automatically
-    - name: Build Android APK
+    - name: Build Android APK (Debug)
       run: |
         gradle :android:assembleDebug --stacktrace --no-daemon
+
+    # Build release with debug signing to verify CPU difference
+    - name: Build Android APK (Release)
+      run: |
+        gradle :android:assembleRelease --stacktrace --no-daemon
+
+    # Sign release APK with debug key for installation testing
+    - name: Sign Release APK (debug key)
+      run: |
+        APK=android/build/outputs/apk/release/android-release.apk
+        SIGNED=android/build/outputs/apk/release/android-release-signed.apk
+        ls -la $APK || exit 1
+        # Use Android SDK build-tools apksigner with debug key
+        KEYSTORE=$HOME/.android/debug.keystore
+        if [ ! -f "$KEYSTORE" ]; then
+          keytool -genkey -v -keystore $KEYSTORE -storepass android -alias androiddebugkey \
+            -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+        fi
+        BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+        $BUILD_TOOLS/apksigner sign --ks $KEYSTORE --ks-pass pass:android \
+          --key-pass pass:android --out $SIGNED $APK
+        ls -la $SIGNED
 
     - name: Verify shader-cache classes landed in the APK
       run: |
@@ -60,9 +83,16 @@ jobs:
         for d in classes*.dex; do echo "== $d =="; strings "$d" | grep -c "shader_cache" || true; done
         strings classes*.dex | grep -m3 "ShaderBinaryCache\|shader_cache" && echo "DEX-VERIFY: shader cache present" || { echo "DEX-VERIFY: NOT FOUND"; exit 1; }
 
-    - name: Upload APK
+    - name: Upload APK (Debug)
       if: success()
       uses: actions/upload-artifact@v4
       with:
-        name: Mindustry-ShaderCache-Android
+        name: Mindustry-ShaderCache-Android-Debug
         path: android/build/outputs/apk/debug/android-debug.apk
+
+    - name: Upload APK (Release)
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: Mindustry-ShaderCache-Android-Release
+        path: android/build/outputs/apk/release/android-release-signed.apk
