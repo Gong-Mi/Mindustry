@@ -55,6 +55,7 @@ jobs:
     - name: Build Android APK (Release)
       run: |
         # Generate debug keystore and point release signing at it
+        mkdir -p $HOME/.android
         KEYSTORE=$HOME/.android/debug.keystore
         if [ ! -f "$KEYSTORE" ]; then
           keytool -genkey -v -keystore $KEYSTORE -storepass android -alias androiddebugkey \
